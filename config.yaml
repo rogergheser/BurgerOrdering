@@ -1,0 +1,34 @@
+NLU:
+  system: ''
+  Intents:
+    - burger_ordering
+    - burger_delivery
+  Slots:
+    - burger_ordering:
+      patty_count:
+        type: int
+        limit: [0,5]
+      cheese_count:
+        type: int
+        limit: [0,5]
+      bacon_count:
+        type: int
+        limit: [0,3]
+      tomato:
+        type: bool
+      onions:
+        type: string
+        options:
+          - normal
+          - caramellised
+      mayo:
+        type: bool
+      ketchup:
+        type: bool
+      cooking:
+        type: string
+        options:
+          - normal
+          - caramellised
+DM:
+  system: ''
