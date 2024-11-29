@@ -267,16 +267,6 @@ class DialogueManager():
 if __name__ == '__main__':
 
     dm = DialogueManager(nlu_cfg, dm_cfg, nlg_cfg)
-    # response = dm.query_model('llama2', 'nlu_prompt.txt', 'I want a burger')
-    # print(response['message']['content'])
     dm.start_conversation()
-    # dm.ask_info('patty_count')
-    # dm.ask_info('cheese_count')
-    # dm.ask_info('bacon_count')
-    # dm.ask_info('tomato')
-    # dm.ask_info('onions')
-    # dm.ask_info('mayo')
-    # dm.ask_info('ketchup')
-    # dm.ask_info('cooking')
-    # dm.confirm_order
+
     print(dm.history.to_msg_history())
