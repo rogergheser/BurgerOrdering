@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+colab_prompt_models.ipynb
 
 # C extensions
 *.so
