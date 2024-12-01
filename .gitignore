@@ -1,9 +1,10 @@
+prompts
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 colab_prompt_models.ipynb
-
 # C extensions
 *.so
 
