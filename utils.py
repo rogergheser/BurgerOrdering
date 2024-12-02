@@ -48,13 +48,13 @@ class BurgerST(DialogueST):
             if parsed_input['intent'] != 'burger_ordering':
                 logging.warning('Intent is not burger_ordering.')
                 return
-
         if 'sentiment' in parsed_input:
             self.sentiment = parsed_input['sentiment']
         
         if 'slots' not in parsed_input:
             logging.warning('No slots found in parsed input.')
             return
+        
         parsed_input = parsed_input['slots']
         for field in parsed_input:
             if parsed_input[field] == 'null':
@@ -102,7 +102,10 @@ class ConversationHistory():
         return ', \n'.join(self.actions)
 
     def to_msg_history(self)->list[dict]:
-        return [{'role': role, 'content': msg} for role, msg in zip(self.roles, self.msg_list)]
+        history = [{'role': role, 'content': msg} for role, msg in zip(self.roles, self.msg_list)]
+        if len(history) > 5:
+            return history[-5:]
+        return history
 
 
 def parse_json(json_str: str) -> Union[dict, list, None]:
@@ -204,6 +207,7 @@ def extract_action_and_argument(input_string):
     ## TODO add check in case there is more in the output string from the LLM
     # Remove any ' characters from the input string
     input_string = input_string.replace("'", "")
+    input_string = input_string.replace("\"", "")
     # Define the regex pattern for extracting action and argument
     pattern = r'(\w+)\((\w+)\)'
     match = re.match(pattern, input_string)
