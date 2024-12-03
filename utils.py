@@ -13,6 +13,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedModel,
 )
+
 class DialogueST(ABC):
     def __init__(self):
         pass

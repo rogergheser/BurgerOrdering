@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 import os
 import ollama
-import re
 import logging
-import sys
+from components.NLU import NLU
 from utils import *
 
 
@@ -11,18 +10,20 @@ from utils import *
 logger = logging.getLogger('DialogueManager')
 logger.setLevel(logging.DEBUG)
 
+
 class DialogueManager():
-    def __init__(self, nlu_cfg, dm_cfg, nlg_cfg):
+    def __init__(self, pre_nlu_cfg, nlu_cfg, dm_cfg, nlg_cfg):
         self.RUNNING = True
         self.nlu_cfg = nlu_cfg
         self.dm_cfg = dm_cfg
         self.nlg_cfg = nlg_cfg
-        if os.environ['USER'] == 'amir.gheser':
-            self.model, self.tokenizer = load_model(nlu_cfg['model_name'], parallel=False, device='cuda', dtype='b16')
-
-        self.state_tracker = BurgerST() # TODO add vars
+        self.state_tracker = BurgerST()
         self.history = ConversationHistory()
         self.welcome_msg = 'Hello! I am a burger ordering assistant. How can I help you today?\n'
+        self.nlu = NLU(pre_nlu_cfg, nlu_cfg, self.history)
+
+        if os.environ['USER'] == 'amir.gheser':
+            self.model, self.tokenizer = load_model(nlu_cfg['model_name'], parallel=False, device='cuda', dtype='b16')
 
     def start_conversation(self):
         self.history.add(self.welcome_msg, 'assistant', 'welcome')
@@ -31,7 +32,8 @@ class DialogueManager():
         
         while self.RUNNING:
             # NLU
-            meaning_representation = self.get_meaning_representation(input_prompt)
+            # meaning_representation = self.get_meaning_representation(input_prompt)
+            meaning_representation = self.nlu(input_prompt)
             self.state_tracker.update(meaning_representation)
             logger.info(self.state_tracker, extra={"color": "green"})
             # DM
@@ -81,19 +83,6 @@ class DialogueManager():
             self.history.add(input_prompt, 'user', 'confirm_order')
 
         return input_prompt.lower()
-
-
-    def get_meaning_representation(self, input_prompt):
-        raw_meaning_rep = self.query_model(self.nlu_cfg['model_name'], self.nlu_cfg['system_prompt_file'], input_prompt)
-        try:
-            meaning_representation = parse_json(raw_meaning_rep)
-        except:
-            logger.debug('\033[91m' + 'Error in parsing the meaning representation. Please try again.\n\n'
-                         + raw_meaning_rep)
-            return 
-        logger.info(meaning_representation)
-        
-        return meaning_representation
 
     def query_dialogue_manager(self, state_tracker: DialogueST):
         """
@@ -155,6 +144,18 @@ class DialogueManager():
         else:
             raise ValueError('Unknown user environment. Please set the USER environment variable.')
 
+    def get_meaning_representation(self, input_prompt):
+        raw_meaning_rep = self.query_model(self.nlu_cfg['model_name'], self.nlu_cfg['system_prompt_file'], input_prompt)
+        try:
+            meaning_representation = parse_json(raw_meaning_rep)
+        except:
+            logger.debug('\033[91m' + 'Error in parsing the meaning representation. Please try again.\n\n'
+                         + raw_meaning_rep)
+            return 
+        logger.info(meaning_representation)
+        
+        return meaning_representation
+
     # def ask_info(self, info):
     #     lexicalised_question = self.lexicalise('ask_info({})'.format(info))
     #     self.history.add(lexicalised_question, 'assistant', 'ask_info')
@@ -174,6 +175,11 @@ class DialogueManager():
     #     self.history.add(lexicalised_ans, 'assistant', 'confirm_order')
     #     logging.debug(lexicalised_ans)
 
+pre_nlu_cfg = {
+    'system_prompt_file' : 'prompts/pre_nlu_prompt.txt',
+    'model_name' : 'llama3',
+}
+
 nlu_cfg = {
     'system_prompt_file' : 'prompts/nlu_prompt.txt',
     'model_name' : 'llama3',
@@ -192,7 +198,7 @@ nlg_cfg = {
 
 if __name__ == '__main__':
     logger_cfg(logger)
-    dm = DialogueManager(nlu_cfg, dm_cfg, nlg_cfg)
+    dm = DialogueManager(pre_nlu_cfg, nlu_cfg, dm_cfg, nlg_cfg)
     dm.start_conversation()
 
     print(dm.history.to_msg_history())
