@@ -6,6 +6,7 @@ import logging
 import sys
 from utils import *
 
+
 # Configure logging
 logger = logging.getLogger('DialogueManager')
 logger.setLevel(logging.DEBUG)
@@ -16,6 +17,8 @@ class DialogueManager():
         self.nlu_cfg = nlu_cfg
         self.dm_cfg = dm_cfg
         self.nlg_cfg = nlg_cfg
+        if os.environ['USER'] == 'amir.gheser':
+            self.model, self.tokenizer = load_model(nlu_cfg['model_name'], parallel=False, device='cuda', dtype='b16')
 
         self.state_tracker = BurgerST() # TODO add vars
         self.history = ConversationHistory()
@@ -120,8 +123,15 @@ class DialogueManager():
         system_prompt = open(system, 'r').read()
         user_env = os.getenv('USER')
         if user_env == 'amir.gheser':
-            # we are on the cluster
-            pass
+            hist = self.history.to_msg_history()
+            hist = hist[-5:] if len(hist > 5) else hist
+            history = "\n".join([f"{k['role']}: {k['content']}"  for k in hist])
+            input = system_prompt + '\n' + history + '\n' + input_text
+
+            input = self.tokenizer(input, return_tensors="pt").to(self.model.device)
+            response = generate(self.model, input, self.tokenizer, max_new_tokens=max_seq_len)
+
+            return response
         elif user_env == 'amirgheser':
             # we are on the local machine
             messages = [{

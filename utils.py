@@ -1,9 +1,18 @@
+import torch
 import json
 import re
 import logging
 import sys
+from argparse import Namespace
 from typing import Any, Union
 from abc import ABC, abstractmethod
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BatchEncoding,
+    PreTrainedTokenizer,
+    PreTrainedModel,
+)
 class DialogueST(ABC):
     def __init__(self):
         pass
@@ -78,7 +87,31 @@ class BurgerST(DialogueST):
                 return False
         return True
     
+def load_model(model_name:str, parallel:bool=False, device:str='cuda', dtype:str='b16') -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="auto" if parallel else device, 
+        torch_dtype=torch.float32 if dtype == "f32" else torch.bfloat16,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return model, tokenizer  # type: ignore
 
+
+def generate(
+    model: PreTrainedModel,
+    inputs: BatchEncoding,
+    tokenizer: PreTrainedTokenizer,
+    max_new_tokens: int = 128,
+) -> str:
+    output = model.generate(
+        inputs.input_ids,
+        attention_mask=inputs.attention_mask,
+        max_new_tokens=max_new_tokens,
+        pad_token_id=tokenizer.eos_token_id,
+    )
+    return tokenizer.decode(
+        output[0][len(inputs.input_ids[0]) :], skip_special_tokens=True
+    )
 
 class ConversationHistory():
     def __init__(self):
