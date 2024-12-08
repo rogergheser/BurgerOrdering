@@ -84,6 +84,7 @@ class DialogueManager():
 
         return input_prompt.lower()
 
+    @log_time(logger=logger)
     def query_dialogue_manager(self, state_tracker: DialogueST):
         """
         Query the dialogue manager model to get the next best action to perform.
@@ -102,12 +103,14 @@ class DialogueManager():
         
         return action, argument
 
+    @log_time(logger=logger)
     def lexicalise(self, action):
         logger.debug('lexicalise: ' + action)
         lexicalised_text = self.query_model(self.nlg_cfg['model_name'], self.nlg_cfg['system_prompt_file'], input_text=action)
 
         return lexicalised_text
     
+    @log_time(logger=logger)
     def query_model(self, model_name, system, input_text=False, max_seq_len=128):
         system_prompt = open(system, 'r').read()
         user_env = os.getenv('USER')
@@ -144,6 +147,7 @@ class DialogueManager():
         else:
             raise ValueError('Unknown user environment. Please set the USER environment variable.')
 
+    @log_time(logger=logger)
     def get_meaning_representation(self, input_prompt):
         raw_meaning_rep = self.query_model(self.nlu_cfg['model_name'], self.nlu_cfg['system_prompt_file'], input_prompt)
         try:

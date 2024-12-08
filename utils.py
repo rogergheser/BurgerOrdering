@@ -3,8 +3,13 @@ import json
 import re
 import logging
 import sys
+import time
 from argparse import Namespace
-from typing import Any, Union
+from typing import (
+    Any,
+    Optional,
+    Union
+)
 from abc import ABC, abstractmethod
 from transformers import (
     AutoModelForCausalLM,
@@ -13,6 +18,28 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedModel,
 )
+
+def log_time(logger:Optional[Any]=None):
+    """
+    Log the execcution time of a logger.
+    :param logger: [optional] logger to log the execution time.
+    """
+    if logger is None:
+        logger = logging.getLogger()
+    
+    def decorator(func):
+        """
+        Decorator to log the execution time of a function.
+        """
+        def wrapper(*args, **kwargs):
+            start_time = time.time()  # Record the start time
+            result = func(*args, **kwargs)  # Execute the function
+            end_time = time.time()  # Record the end time
+            execution_time = end_time - start_time  # Calculate elapsed time
+            logger.info(f"Function '{func.__name__}' executed in {execution_time:.4f} seconds")
+            return result
+        return wrapper
+    return decorator
 
 class DialogueST(ABC):
     def __init__(self):
